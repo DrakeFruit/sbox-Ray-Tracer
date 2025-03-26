@@ -21,6 +21,8 @@ COMMON
     struct RayTracingMaterial
     {
         float4 color;
+        float4 emissionColor;
+        float emissionStrength;
     };
     
     struct HitInfo
@@ -73,12 +75,15 @@ PS
     #include "postprocess/common.hlsl"
     #include "postprocess/functions.hlsl"
 	#include "common/shared.hlsl"
+    #include "procedural.hlsl"
     RenderState( DepthWriteEnable, false );
     RenderState( DepthEnable, false );
     
-    //Texture2D g_tColorBuffer < Attribute( "ColorBuffer" ); SrgbRead( true ); >;
+    Texture2D g_tColorBuffer < Attribute( "ColorBuffer" ); SrgbRead( true ); >;
     StructuredBuffer<SphereDef> Spheres < Attribute("Spheres"); >;
     int NumSpheres < Attribute("NumSpheres"); >;
+    int MaxBounceCount < Attribute( "MaxBounceCount" ); >;
+    int RaysPerPixel < Attribute( "RaysPerPixel" ); >;
     
     HitInfo RaySphere( Ray ray, float3 sphereCenter, float sphereRadius )
     {
@@ -124,15 +129,84 @@ PS
         }
         return closestHit;
     }
+    
+    float RandomValue( inout uint state )
+    {
+        state = state * 747796405 + 2891336453;
+        uint result = ((state >> ((state >> 28) + 4)) ^ state) * 277803737;
+        result = (result >> 22) ^ result;
+        return result / pow(2, 32);
+    }
+    
+    float RandomValueNormalDistribution( inout uint state)
+    {
+        float theta = 2 * 3.1415926 * RandomValue( state );
+        float rho = sqrt(-2 * log(RandomValue( state )) );
+        return rho * cos( theta );
+    }
+    
+    float3 RandomDirection( inout uint state )
+    {
+        float x = RandomValueNormalDistribution( state );
+        float y = RandomValueNormalDistribution( state );
+        float z = RandomValueNormalDistribution( state );
+        return normalize( float3(x, y, z) );
+    }
+    
+    float3 RandomHemisphereDirection( float3 normal, inout uint rngState )
+    {
+        float3 dir = RandomDirection( rngState );
+        return dir * sign( dot(normal, dir) );
+    }
+    
+    float3 Trace( Ray ray, inout uint state )
+    {
+        float3 incomingLight = 0;
+        float3 rayColor = 1;
+        
+        for ( int i = 0; i <= MaxBounceCount; i++ )
+        {
+            HitInfo hitInfo = CalculateRayCollision( ray );
+            if ( hitInfo.hit )
+            {
+                ray.origin = hitInfo.hitPoint;
+                ray.dir = RandomHemisphereDirection( hitInfo.normal, state );
+                
+                RayTracingMaterial mat = hitInfo.material;
+                float3 emittedLight = mat.emissionColor.xyz * mat.emissionStrength;
+                incomingLight += emittedLight * rayColor;
+                rayColor *= mat.color.xyz;
+            }
+            else
+            {
+                break;
+            }
+        }
+        return incomingLight;
+    }
 
     float4 MainPs( PixelInput i ) : SV_Target0
     {
+        uint2 numPixels = g_vViewportSize.xy;
+        uint2 pixelCoord = i.vPositionSs.xy * numPixels;
+        uint pixelIndex = pixelCoord.y * numPixels.x * pixelCoord.x;
+        uint rngState = pixelIndex;
+        
         float3 vScenePositionWs = Depth::GetWorldPosition( i.vPositionSs.xy );
         
         Ray ray;
         ray.origin = g_vCameraPositionWs;
         ray.dir = normalize(vScenePositionWs - ray.origin);
-        //return float4( ray.dir, 1 );
-        return float4(CalculateRayCollision( ray ).hit, 0);
+        
+        float3 totalIncomingLight = 0;
+        
+        for ( int rayIndex = 0; rayIndex < RaysPerPixel; rayIndex++ )
+        {
+            totalIncomingLight += Trace( ray, rngState );
+        }
+        
+        float3 pixelColor = totalIncomingLight / RaysPerPixel;
+        return float4( pixelColor, 1);
+        //return float4(Trace( ray, rngState ), 0);
     }
 }

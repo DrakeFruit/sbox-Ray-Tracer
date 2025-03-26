@@ -11,7 +11,7 @@
           "__type": "Sandbox.SceneInformation",
           "__guid": "d76236f7-e95b-4a6b-808f-b5bcfed65c27",
           "Author": null,
-          "Changes": null,
+          "Changes": "",
           "Description": "",
           "Group": null,
           "OnComponentDestroy": null,
@@ -59,16 +59,70 @@
         },
         {
           "__type": "Sandbox.RayTrace",
-          "__guid": "358abeb9-aaf0-492d-8e93-b0eda92ba115",
+          "__guid": "fd175c0a-f4d0-4687-8aeb-e8f5f5763ed6",
+          "MaxBounces": 25,
           "OnComponentDestroy": null,
           "OnComponentDisabled": null,
           "OnComponentEnabled": null,
           "OnComponentFixedUpdate": null,
           "OnComponentStart": null,
           "OnComponentUpdate": null,
+          "RaysPerPixel": 25,
           "Spheres": [
-            {},
-            {}
+            {
+              "position": "0,0,2.5",
+              "radius": 10,
+              "material": {
+                "color": "1,0,0,1",
+                "emissionColor": "1,1,1,0",
+                "emissionStrength": 0
+              }
+            },
+            {
+              "position": "-22.80004,0,20.50001",
+              "radius": 6.1999965,
+              "material": {
+                "color": "0.59256,0.32093,1,1",
+                "emissionColor": "0,0,0,0",
+                "emissionStrength": 0
+              }
+            },
+            {
+              "position": "-1560.399,0,-200.3001",
+              "radius": 1024,
+              "material": {
+                "color": "0,0,0,1",
+                "emissionColor": "1,1,1,1",
+                "emissionStrength": 1
+              }
+            },
+            {
+              "position": "0,0,-500.404",
+              "radius": 492.8996,
+              "material": {
+                "color": "0.01636,0,0.9814,1",
+                "emissionColor": "0,0,0,0",
+                "emissionStrength": 0
+              }
+            },
+            {
+              "position": "0,36.90031,15",
+              "radius": 25,
+              "material": {
+                "color": "0.73134,0.67351,0.75814,1",
+                "emissionColor": "0,0,0,0",
+                "emissionStrength": 0
+              }
+            },
+            {
+              "position": "0,-31.50005,5.899996",
+              "radius": 15,
+              "material": {
+                "color": "0,1,0.98333,1",
+                "emissionColor": "0,0,0,0",
+                "emissionStrength": 0
+              }
+            }
           ]
         }
       ]

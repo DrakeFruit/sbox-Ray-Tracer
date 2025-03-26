@@ -7,7 +7,9 @@ namespace Sandbox;
 [Icon( "grain" )]
 public sealed class RayTrace : PostProcess, Component.ExecuteInEditor
 {
-	[Property] List<SphereDef> Spheres { get; set; }
+	[Property] int MaxBounces { get; set; }
+	[Property] int RaysPerPixel { get; set; }
+	[Property, InlineEditor] public List<SphereDef> Spheres { get; set; } = [];
 
 	IDisposable renderHook;
 
@@ -36,10 +38,14 @@ public sealed class RayTrace : PostProcess, Component.ExecuteInEditor
 		//
 		// attributes.Set("ViewParams", new Vector3(planeWidth, planeHeight, camera.ZNear) );
 		// attributes.Set( "CamLocalToWorldMatrix", Matrix.CreateRotation( camera.Rotation ) * Matrix.CreateTranslation( camera.Position ) );
+		
 		GpuBuffer<SphereDef> SphereBuffer = new( Spheres.Count );
 		SphereBuffer.SetData( Spheres );
 		
 		attributes.Set( "Spheres", SphereBuffer );
+		attributes.Set( "NumSpheres", Spheres.Count );
+		attributes.Set( "MaxBounceCount", MaxBounces );
+		attributes.Set( "RaysPerPixel", RaysPerPixel );
 
 		// Pass the FrameBuffer to the shader
 		Graphics.GrabFrameTexture( "ColorBuffer", attributes );
@@ -48,15 +54,17 @@ public sealed class RayTrace : PostProcess, Component.ExecuteInEditor
 		Graphics.Blit( Material.FromShader( "shaders/raytrace.shader" ), attributes );
 	}
 
-	struct SphereDef
+	public struct SphereDef
 	{
-		Vector3 position;
-		float radius;
-		RayTracingMaterial material;
+		public Vector3 position { get; set; }
+		public float radius { get; set; }
+		[InlineEditor] public RayTracingMaterial material { get; set; }
 	}
 	
-	struct RayTracingMaterial
+	public struct RayTracingMaterial
 	{
-		Color color;
+		public Color color { get; set; }
+		public Color emissionColor { get; set; }
+		public float emissionStrength { get; set; }
 	};
 }
