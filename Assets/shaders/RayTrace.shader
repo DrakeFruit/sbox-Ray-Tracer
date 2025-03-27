@@ -87,8 +87,6 @@ PS
     int MaxBounceCount < Attribute( "MaxBounceCount" ); >;
     int RaysPerPixel < Attribute( "RaysPerPixel" ); >;
     
-    SamplerState s1_s < Filter( POINT ); >;
-    
     HitInfo RaySphere( Ray ray, float3 sphereCenter, float sphereRadius )
     {
         HitInfo hitInfo = (HitInfo)0;
@@ -151,9 +149,9 @@ PS
     
     float3 RandomDirection( float2 uv )
     {
-        float x = g_tBlueNoise.Sample( s1_s, CalculateViewportUv( uv ) * 2 ).r;
-        float y = g_tBlueNoise.Sample( s1_s, CalculateViewportUv( uv ) * 2 ).g;
-        float z = g_tBlueNoise.Sample( s1_s, CalculateViewportUv( uv ) * 2 ).b;
+        float x = g_tBlueNoise.Sample( g_sPointWrap, uv ).r;
+        float y = g_tBlueNoise.Sample( g_sPointWrap, uv ).g;
+        float z = g_tBlueNoise.Sample( g_sPointWrap, uv ).b;
         return normalize( float3(x, y, z) );
     }
     
@@ -163,7 +161,7 @@ PS
         return dir * sign( dot(normal, dir) );
     }
     
-    float3 Trace( Ray ray, inout uint state, float2 uv )
+    float3 Trace( Ray ray, float2 uv )
     {
         float3 incomingLight = 0;
         float3 rayColor = 1;
@@ -174,7 +172,7 @@ PS
             if ( hitInfo.hit )
             {
                 ray.origin = hitInfo.hitPoint;
-                ray.dir = RandomHemisphereDirection( hitInfo.normal, uv );
+                ray.dir = RandomHemisphereDirection( hitInfo.normal, uv * (i + 5) );
                 
                 RayTracingMaterial mat = hitInfo.material;
                 float3 emittedLight = mat.emissionColor.xyz * mat.emissionStrength;
@@ -193,10 +191,10 @@ PS
 
     float4 MainPs( PixelInput i ) : SV_Target0
     {
-        uint2 numPixels = g_vViewportSize.xy;
-        uint2 pixelCoord = i.vPositionSs.xy * numPixels;
-        uint pixelIndex = pixelCoord.y * numPixels.x * pixelCoord.x;
-        uint rngState = pixelIndex + g_flTime * 8000;
+//        uint2 numPixels = g_vViewportSize.xy;
+//        uint2 pixelCoord = i.vPositionSs.xy * numPixels;
+//        uint pixelIndex = pixelCoord.y * numPixels.x * pixelCoord.x;
+//        uint rngState = pixelIndex + g_flTime * 8000;
         
         float3 vScenePositionWs = Depth::GetWorldPosition( i.vPositionSs.xy );
         
@@ -208,7 +206,7 @@ PS
         
         for ( int rayIndex = 0; rayIndex < RaysPerPixel; rayIndex++ )
         {
-            totalIncomingLight += Trace( ray, rngState, i.vPositionSs.xy );
+            totalIncomingLight += Trace( ray, CalculateViewportUv( i.vPositionSs.xy ) * (rayIndex + 7) );
         }
         
         float3 pixelColor = totalIncomingLight / RaysPerPixel;
