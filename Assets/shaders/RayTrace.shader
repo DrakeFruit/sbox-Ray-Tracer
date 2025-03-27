@@ -80,10 +80,14 @@ PS
     RenderState( DepthEnable, false );
     
     Texture2D g_tColorBuffer < Attribute( "ColorBuffer" ); SrgbRead( true ); >;
+    Texture2D g_tBlueNoise < Attribute( "BlueNoise" ); SrgbRead( true ); >;
     StructuredBuffer<SphereDef> Spheres < Attribute("Spheres"); >;
+    
     int NumSpheres < Attribute("NumSpheres"); >;
     int MaxBounceCount < Attribute( "MaxBounceCount" ); >;
     int RaysPerPixel < Attribute( "RaysPerPixel" ); >;
+    
+    SamplerState s1_s < Filter( POINT ); >;
     
     HitInfo RaySphere( Ray ray, float3 sphereCenter, float sphereRadius )
     {
@@ -130,32 +134,32 @@ PS
         return closestHit;
     }
     
-    float RandomValue( inout uint state )
-    {
-        state = state * 747796405 + 2891336453;
-        uint result = ((state >> ((state >> 28) + 4)) ^ state) * 277803737;
-        result = (result >> 22) ^ result;
-        return result / pow(2, 32);
-    }
+//    float RandomValue( inout uint state )
+//    {
+//        state = state * 747796405 + 2891336453;
+//        uint result = ((state >> ((state >> 28) + 4)) ^ state) * 277803737;
+//        result = (result >> 22) ^ result;
+//        return result / pow(2, 32);
+//    }
+//    
+//    float RandomValueNormalDistribution( inout uint state )
+//    {
+//        float theta = 2 * 3.1415926 * RandomValue( state );
+//        float rho = sqrt(-2 * log(RandomValue( state )) );
+//        return rho * cos( theta );
+//    }
     
-    float RandomValueNormalDistribution( inout uint state)
+    float3 RandomDirection( float2 uv )
     {
-        float theta = 2 * 3.1415926 * RandomValue( state );
-        float rho = sqrt(-2 * log(RandomValue( state )) );
-        return rho * cos( theta );
-    }
-    
-    float3 RandomDirection( inout uint state )
-    {
-        float x = RandomValueNormalDistribution( state );
-        float y = RandomValueNormalDistribution( state );
-        float z = RandomValueNormalDistribution( state );
+        float x = g_tBlueNoise.Sample( s1_s, CalculateViewportUv( uv ) * 2 ).r;
+        float y = g_tBlueNoise.Sample( s1_s, CalculateViewportUv( uv ) * 2 ).g;
+        float z = g_tBlueNoise.Sample( s1_s, CalculateViewportUv( uv ) * 2 ).b;
         return normalize( float3(x, y, z) );
     }
     
-    float3 RandomHemisphereDirection( float3 normal, inout uint rngState )
+    float3 RandomHemisphereDirection( float3 normal, float2 uv )
     {
-        float3 dir = RandomDirection( rngState );
+        float3 dir = RandomDirection( uv );
         return dir * sign( dot(normal, dir) );
     }
     
@@ -170,7 +174,7 @@ PS
             if ( hitInfo.hit )
             {
                 ray.origin = hitInfo.hitPoint;
-                ray.dir = RandomHemisphereDirection( hitInfo.normal, state );
+                ray.dir = RandomHemisphereDirection( hitInfo.normal, uv );
                 
                 RayTracingMaterial mat = hitInfo.material;
                 float3 emittedLight = mat.emissionColor.xyz * mat.emissionStrength;
@@ -209,6 +213,7 @@ PS
         
         float3 pixelColor = totalIncomingLight / RaysPerPixel;
         return float4( pixelColor, 1);
+        //return g_tBlueNoise.Sample( s1_s, CalculateViewportUv( i.vPositionSs ) * 8 ).rgba;
         //return float4(AmbientLight::From( g_vCameraPositionWs, i.vPositionSs.xy, g_vCameraDirWs ), 0 );
     }
 }

@@ -9,6 +9,7 @@ public sealed class RayTrace : PostProcess, Component.ExecuteInEditor
 {
 	[Property] int MaxBounces { get; set; }
 	[Property] int RaysPerPixel { get; set; }
+	[Property] Texture BlueNoise { get; set; }
 	[Property, InlineEditor] public List<SphereDef> Spheres { get; set; } = [];
 
 	IDisposable renderHook;
@@ -46,6 +47,7 @@ public sealed class RayTrace : PostProcess, Component.ExecuteInEditor
 		attributes.Set( "NumSpheres", Spheres.Count );
 		attributes.Set( "MaxBounceCount", MaxBounces );
 		attributes.Set( "RaysPerPixel", RaysPerPixel );
+		attributes.Set( "BlueNoise", BlueNoise );
 
 		// Pass the FrameBuffer to the shader
 		Graphics.GrabFrameTexture( "ColorBuffer", attributes );
