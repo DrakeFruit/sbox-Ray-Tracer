@@ -60,14 +60,14 @@
         {
           "__type": "Sandbox.RayTrace",
           "__guid": "fd175c0a-f4d0-4687-8aeb-e8f5f5763ed6",
-          "MaxBounces": 25,
+          "MaxBounces": 10,
           "OnComponentDestroy": null,
           "OnComponentDisabled": null,
           "OnComponentEnabled": null,
           "OnComponentFixedUpdate": null,
           "OnComponentStart": null,
           "OnComponentUpdate": null,
-          "RaysPerPixel": 25,
+          "RaysPerPixel": 10,
           "Spheres": [
             {
               "position": "0,0,2.5",
@@ -88,19 +88,19 @@
               }
             },
             {
-              "position": "-1560.399,0,-200.3001",
-              "radius": 1024,
+              "position": "-16096,0,1119.199",
+              "radius": 4096,
               "material": {
                 "color": "0,0,0,1",
-                "emissionColor": "1,1,1,1",
-                "emissionStrength": 1
+                "emissionColor": "1,0.97884,0.8186,1",
+                "emissionStrength": 500
               }
             },
             {
               "position": "0,0,-500.404",
-              "radius": 492.8996,
+              "radius": 492.9,
               "material": {
-                "color": "0.01636,0,0.9814,1",
+                "color": "0.01558,0,0.93488,1",
                 "emissionColor": "0,0,0,0",
                 "emissionStrength": 0
               }
@@ -153,6 +153,29 @@
             "AfterUILayer": false
           },
           "RenderType": "On",
+          "Tint": "1,1,1,1"
+        }
+      ]
+    },
+    {
+      "__guid": "0a34bd02-75eb-4bce-9fd9-d499d67d2df0",
+      "Flags": 0,
+      "Name": "Skybox",
+      "Position": "-76.89684,66.8247,-18.96008",
+      "Tags": "skybox",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "Sandbox.SkyBox2D",
+          "__guid": "9f2eb319-9073-49da-8c41-62fad3604b79",
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "SkyIndirectLighting": true,
+          "SkyMaterial": "materials/skybox/skybox_day_01.vmat",
           "Tint": "1,1,1,1"
         }
       ]

@@ -159,7 +159,7 @@ PS
         return dir * sign( dot(normal, dir) );
     }
     
-    float3 Trace( Ray ray, inout uint state )
+    float3 Trace( Ray ray, inout uint state, float2 uv )
     {
         float3 incomingLight = 0;
         float3 rayColor = 1;
@@ -177,8 +177,10 @@ PS
                 incomingLight += emittedLight * rayColor;
                 rayColor *= mat.color.xyz;
             }
-            else
+            else // Hit nothing, return skybox color
             {
+                float3 ambientLight = AmbientLight::From( ray.origin, uv, ray.dir ); //TODO: fix skybox blurring or whatever
+                incomingLight += ambientLight * rayColor;
                 break;
             }
         }
@@ -190,7 +192,7 @@ PS
         uint2 numPixels = g_vViewportSize.xy;
         uint2 pixelCoord = i.vPositionSs.xy * numPixels;
         uint pixelIndex = pixelCoord.y * numPixels.x * pixelCoord.x;
-        uint rngState = pixelIndex;
+        uint rngState = pixelIndex + g_flTime * 8000;
         
         float3 vScenePositionWs = Depth::GetWorldPosition( i.vPositionSs.xy );
         
@@ -202,11 +204,11 @@ PS
         
         for ( int rayIndex = 0; rayIndex < RaysPerPixel; rayIndex++ )
         {
-            totalIncomingLight += Trace( ray, rngState );
+            totalIncomingLight += Trace( ray, rngState, i.vPositionSs.xy );
         }
         
         float3 pixelColor = totalIncomingLight / RaysPerPixel;
         return float4( pixelColor, 1);
-        //return float4(Trace( ray, rngState ), 0);
+        //return float4(AmbientLight::From( g_vCameraPositionWs, i.vPositionSs.xy, g_vCameraDirWs ), 0 );
     }
 }
