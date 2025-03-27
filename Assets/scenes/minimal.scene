@@ -85,7 +85,7 @@
           "__type": "Sandbox.RayTrace",
           "__guid": "fd175c0a-f4d0-4687-8aeb-e8f5f5763ed6",
           "BlueNoise": "textures/dev/blue_noise_256.vtex",
-          "MaxBounces": 4,
+          "MaxBounces": 10,
           "OnComponentDestroy": null,
           "OnComponentDisabled": null,
           "OnComponentEnabled": null,

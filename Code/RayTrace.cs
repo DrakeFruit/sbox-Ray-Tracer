@@ -1,4 +1,5 @@
 using System;
+using Sandbox.Rendering;
 
 namespace Sandbox;
 
@@ -12,10 +13,13 @@ public sealed class RayTrace : PostProcess, Component.ExecuteInEditor
 	[Property] Texture BlueNoise { get; set; }
 	[Property, InlineEditor] public List<SphereDef> Spheres { get; set; } = [];
 
+	int Frames = 0;
+
 	IDisposable renderHook;
 
 	protected override void OnEnabled()
 	{
+		Frames = 0;
 		renderHook = Camera.AddHookBeforeOverlay( "My Post Processing", 1000, RenderEffect );
 	}
 
@@ -48,12 +52,15 @@ public sealed class RayTrace : PostProcess, Component.ExecuteInEditor
 		attributes.Set( "MaxBounceCount", MaxBounces );
 		attributes.Set( "RaysPerPixel", RaysPerPixel );
 		attributes.Set( "BlueNoise", BlueNoise );
+		attributes.Set( "FramesRendered", Frames );
 
 		// Pass the FrameBuffer to the shader
 		Graphics.GrabFrameTexture( "ColorBuffer", attributes );
 
 		// Blit a quad across the entire screen with our custom shader
 		Graphics.Blit( Material.FromShader( "shaders/raytrace.shader" ), attributes );
+		Graphics.GrabFrameTexture( "FramePrev", attributes );
+		Frames++;
 	}
 
 	public struct SphereDef

@@ -76,16 +76,20 @@ PS
     #include "postprocess/functions.hlsl"
 	#include "common/shared.hlsl"
     #include "procedural.hlsl"
-    RenderState( DepthWriteEnable, false );
-    RenderState( DepthEnable, false );
+    RenderState( DepthWriteEnable, true );
+    RenderState( DepthEnable, true );
     
     Texture2D g_tColorBuffer < Attribute( "ColorBuffer" ); SrgbRead( true ); >;
+    Texture2D g_tPrevFrame < Attribute( "FramePrev" ); SrgbRead( true ); >;
     Texture2D g_tBlueNoise < Attribute( "BlueNoise" ); SrgbRead( true ); >;
     StructuredBuffer<SphereDef> Spheres < Attribute("Spheres"); >;
     
     int NumSpheres < Attribute("NumSpheres"); >;
     int MaxBounceCount < Attribute( "MaxBounceCount" ); >;
     int RaysPerPixel < Attribute( "RaysPerPixel" ); >;
+    int FramesRendered < Attribute( "FramesRendered" ); >;
+    
+    SamplerState BilinearClamp < Filter( MIN_MAG_MIP_LINEAR ); AddressU( CLAMP ); AddressV( CLAMP ); AddressW( CLAMP ); >;
     
     HitInfo RaySphere( Ray ray, float3 sphereCenter, float sphereRadius )
     {
@@ -172,7 +176,7 @@ PS
             if ( hitInfo.hit )
             {
                 ray.origin = hitInfo.hitPoint;
-                ray.dir = RandomHemisphereDirection( hitInfo.normal, uv * (i + 5) );
+                ray.dir = normalize( hitInfo.normal + RandomDirection( uv ) );
                 
                 RayTracingMaterial mat = hitInfo.material;
                 float3 emittedLight = mat.emissionColor.xyz * mat.emissionStrength;
@@ -209,8 +213,11 @@ PS
             totalIncomingLight += Trace( ray, CalculateViewportUv( i.vPositionSs.xy ) * (rayIndex + 7) );
         }
         
-        float3 pixelColor = totalIncomingLight / RaysPerPixel;
-        return float4( pixelColor, 1);
+        float4 pixelColor = float4(totalIncomingLight / RaysPerPixel, 1);
+        
+        float4 old = g_tPrevFrame.Sample( BilinearClamp, CalculateViewportUv( i.vPositionSs.xy ) ).rgba;
+        //float4 accumulatedAverage = Motion::TemporalFilter( vDispatchId.xy, g_srcWorkingAOTerm, old, g_GTAOConsts.TAABlendAmount );
+        return pixelColor;
         //return g_tBlueNoise.Sample( s1_s, CalculateViewportUv( i.vPositionSs ) * 8 ).rgba;
         //return float4(AmbientLight::From( g_vCameraPositionWs, i.vPositionSs.xy, g_vCameraDirWs ), 0 );
     }
