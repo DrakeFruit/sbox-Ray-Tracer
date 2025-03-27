@@ -51,10 +51,10 @@ struct PixelInput
 {
     float2 vTexCoord : TEXCOORD0;
     #if ( PROGRAM == VFX_PROGRAM_VS )
-        float4 vPositionPs        : SV_Position;
+        float4 vPositionPs : SV_Position;
     #endif
     #if ( ( PROGRAM == VFX_PROGRAM_PS ) )
-        float4 vPositionSs        : SV_Position;
+        float4 vPositionSs : SV_Position;
     #endif
 };
 

@@ -27,10 +27,34 @@
       ]
     },
     {
+      "__guid": "5b5f3527-3286-4c42-8ffd-1e36b0fa688d",
+      "Flags": 0,
+      "Name": "Player",
+      "Position": "-896,0,-9.084264",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "Duccsoft.Freecam",
+          "__guid": "7d8bea1f-632b-4b54-97a3-773ff786b233",
+          "ClampPitch": true,
+          "HighSpeedFactor": 2.5,
+          "LowSpeedFactor": 0.25,
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "Speed": 300,
+          "UseCollision": true
+        }
+      ]
+    },
+    {
       "__guid": "3ee1c9f4-07be-4e0b-8b23-67bee2d8ec8a",
       "Flags": 0,
       "Name": "Camera",
-      "Position": "-128,0,0",
+      "Position": "-896,0,-9.084264",
       "Enabled": true,
       "Components": [
         {
