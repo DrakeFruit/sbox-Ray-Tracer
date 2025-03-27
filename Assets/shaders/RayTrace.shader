@@ -149,9 +149,9 @@ PS
     
     float3 RandomDirection( float2 uv )
     {
-        float x = g_tBlueNoise.Sample( g_sPointWrap, uv ).r;
-        float y = g_tBlueNoise.Sample( g_sPointWrap, uv ).g;
-        float z = g_tBlueNoise.Sample( g_sPointWrap, uv ).b;
+        float x = g_tBlueNoise.Sample( g_sPointWrap, uv + g_vRandomFloats.xy ).r * 2 - 1;
+        float y = g_tBlueNoise.Sample( g_sPointWrap, uv + g_vRandomFloats.xy ).g * 2 - 1;
+        float z = g_tBlueNoise.Sample( g_sPointWrap, uv + g_vRandomFloats.xy ).b * 2 - 1;
         return normalize( float3(x, y, z) );
     }
     
