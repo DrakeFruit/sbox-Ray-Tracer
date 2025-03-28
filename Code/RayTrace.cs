@@ -12,14 +12,14 @@ public sealed class RayTrace : PostProcess, Component.ExecuteInEditor
 	[Property] int RaysPerPixel { get; set; }
 	[Property] Texture BlueNoise { get; set; }
 	[Property, InlineEditor] public List<SphereDef> Spheres { get; set; } = [];
-
-	int Frames = 0;
+	
+	Texture PrevTexture { get; set; }
 
 	IDisposable renderHook;
 
 	protected override void OnEnabled()
 	{
-		Frames = 0;
+		PrevTexture = Texture.CreateRenderTarget( "PreviousFrame", ImageFormat.RGBA8888, Screen.Size );
 		renderHook = Camera.AddHookBeforeOverlay( "My Post Processing", 1000, RenderEffect );
 	}
 
@@ -30,19 +30,12 @@ public sealed class RayTrace : PostProcess, Component.ExecuteInEditor
 	}
 
 	RenderAttributes attributes = new();
+	RenderAttributes AccAttributes = new();
 
 	public void RenderEffect( SceneCamera camera )
 	{
 		if ( !camera.EnablePostProcessing )
 			return;
-
-		// Properties
-		// float Deg2Rad = (float)Math.PI * 2 / 360;
-		// float planeHeight = camera.ZNear * MathF.Tan(camera.FieldOfView * 0.5f * Deg2Rad) * 2;
-		// float planeWidth = planeHeight * (camera.Rect.Width / camera.Rect.Height);
-		//
-		// attributes.Set("ViewParams", new Vector3(planeWidth, planeHeight, camera.ZNear) );
-		// attributes.Set( "CamLocalToWorldMatrix", Matrix.CreateRotation( camera.Rotation ) * Matrix.CreateTranslation( camera.Position ) );
 		
 		GpuBuffer<SphereDef> SphereBuffer = new( Spheres.Count );
 		SphereBuffer.SetData( Spheres );
@@ -52,15 +45,21 @@ public sealed class RayTrace : PostProcess, Component.ExecuteInEditor
 		attributes.Set( "MaxBounceCount", MaxBounces );
 		attributes.Set( "RaysPerPixel", RaysPerPixel );
 		attributes.Set( "BlueNoise", BlueNoise );
-		attributes.Set( "FramesRendered", Frames );
 
 		// Pass the FrameBuffer to the shader
-		Graphics.GrabFrameTexture( "ColorBuffer", attributes );
+		var currentFrame = Graphics.GrabFrameTexture( "ColorBuffer", AccAttributes );
+		Graphics.RenderTarget = currentFrame;
 
 		// Blit a quad across the entire screen with our custom shader
 		Graphics.Blit( Material.FromShader( "shaders/raytrace.shader" ), attributes );
-		Graphics.GrabFrameTexture( "FramePrev", attributes );
-		Frames++;
+		Graphics.RenderTarget = null;
+
+		AccAttributes.Set( "PreviousFrameTexture", PrevTexture );
+		AccAttributes.Set( "CurrentFrameTexture", currentFrame.ColorTarget );
+		
+		Graphics.Blit( Material.FromShader( "shaders/accumulate.shader" ), AccAttributes );
+		//Log.Info(PrevTexture);
+		PrevTexture = currentFrame.ColorTarget;
 	}
 
 	public struct SphereDef

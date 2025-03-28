@@ -75,19 +75,15 @@ PS
     #include "postprocess/common.hlsl"
     #include "postprocess/functions.hlsl"
 	#include "common/shared.hlsl"
-    #include "procedural.hlsl"
     RenderState( DepthWriteEnable, true );
     RenderState( DepthEnable, true );
-    
-    Texture2D g_tColorBuffer < Attribute( "ColorBuffer" ); SrgbRead( true ); >;
-    Texture2D g_tPrevFrame < Attribute( "FramePrev" ); SrgbRead( true ); >;
+
     Texture2D g_tBlueNoise < Attribute( "BlueNoise" ); SrgbRead( true ); >;
     StructuredBuffer<SphereDef> Spheres < Attribute("Spheres"); >;
     
     int NumSpheres < Attribute("NumSpheres"); >;
     int MaxBounceCount < Attribute( "MaxBounceCount" ); >;
     int RaysPerPixel < Attribute( "RaysPerPixel" ); >;
-    int FramesRendered < Attribute( "FramesRendered" ); >;
     
     SamplerState BilinearClamp < Filter( MIN_MAG_MIP_LINEAR ); AddressU( CLAMP ); AddressV( CLAMP ); AddressW( CLAMP ); >;
     
@@ -215,7 +211,7 @@ PS
         
         float4 pixelColor = float4(totalIncomingLight / RaysPerPixel, 1);
         
-        float4 old = g_tPrevFrame.Sample( BilinearClamp, CalculateViewportUv( i.vPositionSs.xy ) ).rgba;
+        //float4 old = g_tPrevFrame.Sample( BilinearClamp, CalculateViewportUv( i.vPositionSs.xy ) ).rgba;
         //float4 accumulatedAverage = Motion::TemporalFilter( vDispatchId.xy, g_srcWorkingAOTerm, old, g_GTAOConsts.TAABlendAmount );
         return pixelColor;
         //return g_tBlueNoise.Sample( s1_s, CalculateViewportUv( i.vPositionSs ) * 8 ).rgba;
