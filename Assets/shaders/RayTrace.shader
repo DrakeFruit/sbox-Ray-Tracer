@@ -140,17 +140,15 @@ PS
 //        return result / pow(2, 32);
 //    }
 //    
-    float RandomValueNormalDistribution( float2 noise )
+    float RandomValueNormalDistribution( float noise ) //somehow get a different random number each time
     {
         float theta = 2 * 3.1415926 * noise;
         float rho = sqrt( -2 * log(noise) );
         return rho * cos( theta );
     }
     
-    float3 RandomDirection( float2 uv )
+    float3 RandomDirection( float3 random )
     {
-        float3 random = g_tBlueNoise.Sample( g_sPointWrap, uv * 4 + g_vRandomFloats.xy * 10 ).rgb;
-
 		float x = RandomValueNormalDistribution( random.r );
         float y = RandomValueNormalDistribution( random.g );
         float z = RandomValueNormalDistribution( random.b );
@@ -158,14 +156,15 @@ PS
         return normalize( float3(x, y, z) );
     }
     
-    float3 RandomHemisphereDirection( float3 normal, float2 uv )
-    {
-        float3 dir = RandomDirection( uv );
-        return dir * sign( dot(normal, dir) );
-    }
+//    float3 RandomHemisphereDirection( float3 normal, float2 uv )
+//    {
+//        float3 dir = RandomDirection( uv, randomOffset );
+//        return dir * sign( dot(normal, dir) );
+//    }
     
     float3 Trace( Ray ray, float2 uv )
     {
+        float3 random = g_tBlueNoise.Sample( g_sPointWrap, uv ).rgb;
         float3 incomingLight = 0;
         float3 rayColor = 1;
         
@@ -175,7 +174,7 @@ PS
             if ( hitInfo.hit )
             {
                 ray.origin = hitInfo.hitPoint;
-                ray.dir = normalize( hitInfo.normal + RandomDirection( uv ) );
+                ray.dir = normalize( hitInfo.normal + RandomDirection( random ) );
                 
                 RayTracingMaterial mat = hitInfo.material;
                 float3 emittedLight = mat.emissionColor.xyz * mat.emissionStrength;
@@ -212,12 +211,12 @@ PS
             totalIncomingLight += Trace( ray, CalculateViewportUv( i.vPositionSs.xy ) );
         }
         
-        float4 pixelColor = float4(totalIncomingLight / RaysPerPixel, 1);
+        float4 pixelColor = float4( totalIncomingLight / RaysPerPixel, 1 );
         
         //float4 old = g_tPrevFrame.Sample( BilinearClamp, CalculateViewportUv( i.vPositionSs.xy ) ).rgba;
-        //float4 accumulatedAverage = Motion::TemporalFilter( vDispatchId.xy, g_srcWorkingAOTerm, old, g_GTAOConsts.TAABlendAmount );
-        return pixelColor;
-        //return g_tBlueNoise.Sample( s1_s, CalculateViewportUv( i.vPositionSs ) * 8 ).rgba;
+		//float3 random = g_tBlueNoise.Sample( g_sPointWrap, CalculateViewportUv( i.vPositionSs.xy ) * 4 ).rgb;
+        //return float4( Trace( ray, CalculateViewportUv( i.vPositionSs.xy ) ), 1 );
+		return pixelColor;
         //return float4(AmbientLight::From( g_vCameraPositionWs, i.vPositionSs.xy, g_vCameraDirWs ), 0 );
     }
 }
