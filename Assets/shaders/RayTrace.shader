@@ -75,17 +75,17 @@ PS
     #include "postprocess/common.hlsl"
     #include "postprocess/functions.hlsl"
 	#include "common/shared.hlsl"
-    RenderState( DepthWriteEnable, true );
-    RenderState( DepthEnable, true );
-
+    #include "procedural.hlsl"
+    RenderState( DepthWriteEnable, false );
+    RenderState( DepthEnable, false );
+    
+    Texture2D g_tColorBuffer < Attribute( "ColorBuffer" ); SrgbRead( true ); >;
     Texture2D g_tBlueNoise < Attribute( "BlueNoise" ); SrgbRead( true ); >;
     StructuredBuffer<SphereDef> Spheres < Attribute("Spheres"); >;
     
     int NumSpheres < Attribute("NumSpheres"); >;
     int MaxBounceCount < Attribute( "MaxBounceCount" ); >;
     int RaysPerPixel < Attribute( "RaysPerPixel" ); >;
-    
-    SamplerState BilinearClamp < Filter( MIN_MAG_MIP_LINEAR ); AddressU( CLAMP ); AddressV( CLAMP ); AddressW( CLAMP ); >;
     
     HitInfo RaySphere( Ray ray, float3 sphereCenter, float sphereRadius )
     {
@@ -140,31 +140,29 @@ PS
 //        return result / pow(2, 32);
 //    }
 //    
-    float RandomValueNormalDistribution( float noise ) //somehow get a different random number each time
-    {
-        float theta = 2 * 3.1415926 * noise;
-        float rho = sqrt( -2 * log(noise) );
-        return rho * cos( theta );
-    }
+//    float RandomValueNormalDistribution( inout uint state )
+//    {
+//        float theta = 2 * 3.1415926 * RandomValue( state );
+//        float rho = sqrt(-2 * log(RandomValue( state )) );
+//        return rho * cos( theta );
+//    }
     
-    float3 RandomDirection( float3 random )
+    float3 RandomDirection( float2 uv )
     {
-		float x = RandomValueNormalDistribution( random.r );
-        float y = RandomValueNormalDistribution( random.g );
-        float z = RandomValueNormalDistribution( random.b );
-    
+        float x = g_tBlueNoise.Sample( g_sPointWrap, uv + g_vRandomFloats.xy ).r * 2 - 1;
+        float y = g_tBlueNoise.Sample( g_sPointWrap, uv + g_vRandomFloats.xy ).g * 2 - 1;
+        float z = g_tBlueNoise.Sample( g_sPointWrap, uv + g_vRandomFloats.xy ).b * 2 - 1;
         return normalize( float3(x, y, z) );
     }
     
-//    float3 RandomHemisphereDirection( float3 normal, float2 uv )
-//    {
-//        float3 dir = RandomDirection( uv, randomOffset );
-//        return dir * sign( dot(normal, dir) );
-//    }
+    float3 RandomHemisphereDirection( float3 normal, float2 uv )
+    {
+        float3 dir = RandomDirection( uv );
+        return dir * sign( dot(normal, dir) );
+    }
     
     float3 Trace( Ray ray, float2 uv )
     {
-        float3 random = g_tBlueNoise.Sample( g_sPointWrap, uv ).rgb;
         float3 incomingLight = 0;
         float3 rayColor = 1;
         
@@ -174,7 +172,7 @@ PS
             if ( hitInfo.hit )
             {
                 ray.origin = hitInfo.hitPoint;
-                ray.dir = normalize( hitInfo.normal + RandomDirection( random ) );
+                ray.dir = RandomHemisphereDirection( hitInfo.normal, uv * (i + 5) );
                 
                 RayTracingMaterial mat = hitInfo.material;
                 float3 emittedLight = mat.emissionColor.xyz * mat.emissionStrength;
@@ -208,15 +206,12 @@ PS
         
         for ( int rayIndex = 0; rayIndex < RaysPerPixel; rayIndex++ )
         {
-            totalIncomingLight += Trace( ray, CalculateViewportUv( i.vPositionSs.xy ) );
+            totalIncomingLight += Trace( ray, CalculateViewportUv( i.vPositionSs.xy ) * (rayIndex + 7) );
         }
         
-        float4 pixelColor = float4( totalIncomingLight / RaysPerPixel, 1 );
-        
-        //float4 old = g_tPrevFrame.Sample( BilinearClamp, CalculateViewportUv( i.vPositionSs.xy ) ).rgba;
-		//float3 random = g_tBlueNoise.Sample( g_sPointWrap, CalculateViewportUv( i.vPositionSs.xy ) * 4 ).rgb;
-        //return float4( Trace( ray, CalculateViewportUv( i.vPositionSs.xy ) ), 1 );
-		return pixelColor;
+        float3 pixelColor = totalIncomingLight / RaysPerPixel;
+        return float4( pixelColor, 1);
+        //return g_tBlueNoise.Sample( s1_s, CalculateViewportUv( i.vPositionSs ) * 8 ).rgba;
         //return float4(AmbientLight::From( g_vCameraPositionWs, i.vPositionSs.xy, g_vCameraDirWs ), 0 );
     }
 }
